@@ -1,9 +1,14 @@
 type x = {
+ abc: string option;
  def: int;
- ghi: int;
+ ghi: bool;
 }[@@deriving atd]
 
 
 let () =
-  {|{'def':5, 'ghi': 11}|} |> x_of_string |> string_of_x |> print_endline
+  let x = {abc = None; def = 1; ghi = true} in
+  let x_str = string_of_x x in
+  print_endline x_str ;
+  let x = x_of_string x_str in
+  print_endline @@ string_of_x x
 

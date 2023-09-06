@@ -82,15 +82,13 @@ let generate_impl_atd ~ctxt (rec_flag, type_decls) skip_unknown =
              let typ_str = Pprintast.string_of_structure [ { pstr_desc = (Ast.Pstr_type (rec_flag, [ { typ_decl with ptype_attributes = [] }])); pstr_loc = ptype_loc } ] in
              print_endline typ_str;
              let ((head, m0), _) = Atd.Util.load_string typ_str in
-             let m1 = Atd.Util.tsort m0 in
-             let defs1 = Atdgen_emit.Ob_mapping.defs_of_atd_modules m1 in
-             Atdgen_emit.Xb_emit.check defs1;
              let (m1', original_types) =
-               Atd.Expand.expand_module_body ~keep_poly:true m0 in
+               Atd.Expand.expand_module_body ~keep_builtins:false ~keep_poly:true m0
+             in
              let m2 = Atd.Util.tsort m1' in
-             let defs = Atdgen_emit.Ob_mapping.defs_of_atd_modules m2 in
+             let defs = Atdgen_emit.Oj_mapping.defs_of_atd_modules m2 ~target:Json in
              let ml =
-               Atdgen_emit.Ob_emit.make_ml ~header:"" ~opens:[] ~with_typedefs:false ~with_create:true ~with_fundefs:true
+               Atdgen_emit.Oj_emit.make_ml ~header:"" ~opens:[] ~with_typedefs:false ~with_create:true ~with_fundefs:true ~std:true ~unknown_field_handler:None ~force_defaults:true ~preprocess_input:None
                  ~original_types ~ocaml_version:None typ_str
                  (Atdgen_emit.Mapping.make_deref defs) defs
              in
