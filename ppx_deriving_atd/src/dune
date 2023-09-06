@@ -1,0 +1,8 @@
+(library
+ (name ppx_deriving_atd)
+ (public_name ppx_deriving_atd)
+ (kind ppx_deriver)
+ (libraries atd atdgen atdgen-emit atdgen-runtime ppxlib)
+ (ppx_runtime_libraries atd atdgen atdgen-runtime)
+ (preprocess
+  (pps ppxlib.metaquot)))

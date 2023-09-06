@@ -1,0 +1,3 @@
+[submodule "atd"]
+	path = atd
+	url = https://github.com/ahrefs/atd.git
