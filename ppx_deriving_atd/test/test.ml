@@ -13,5 +13,6 @@ let () =
   print_endline @@ json_string_of_x x;
   print_endline @@ json_string_of_y { x };
   let z = { zz = ""; zzz = 1; zzzz = false } in
-  print_endline @@ json_string_of_zz { z; y = { x } };
-  print_endline @@ Test2.json_string_of_z z
+  print_endline @@ Test2.json_string_of_z z;
+  let zz = { z; y = { x } } in
+  print_endline @@ json_string_of_zz zz
