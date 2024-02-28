@@ -1,7 +1,25 @@
 open Ppxlib
 open Printf
 
+exception Show_me of Parsetree.type_declaration
+
 let atd_loc_of_parsetree_loc { loc_start; loc_end; _ } = (loc_start, loc_end)
+
+let raise_errorf ?sub ?loc fmt =
+  let module Location = Ocaml_common.Location in
+  let raise_msg str =
+    let err = Location.error ?sub ?loc ("PPX Deriving ATD: " ^ str) in
+    raise (Location.Error err)
+  in
+  ksprintf raise_msg fmt
+
+let unsupported_derivation loc msg =
+  raise_errorf ~loc "Unsupported derivation: %s at %s" msg
+    (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
+
+let illegal_derivation loc msg =
+  raise_errorf ~loc "Illegal derivation: %s at %s" msg
+    (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
 
 (* PARSETREE AST UTILS *)
 let rec fold_loc_exp_desc loc exp_desc =
@@ -66,21 +84,51 @@ let string_of_parse_tree ff x =
 
 let string_of_core_type = string_of_parse_tree Pprintast.core_type
 let string_of_type_decl = string_of_parse_tree Pprintast.type_declaration
+let string_of_structure = Pprintast.string_of_structure
 (* *********** *)
 
-let raise_errorf ?sub ?loc fmt =
-  let module Location = Ocaml_common.Location in
-  let raise_msg str =
-    let err = Location.error ?sub ?loc str in
-    raise (Location.Error err)
-  in
-  ksprintf raise_msg fmt
-
-let unsupported_derivation loc msg =
-  raise_errorf ~loc "PPX Deriving ATD: Unsupported derivation: %s at %s" msg
-    (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
-
 open Atd.Ast
+
+let record_type_of_attributes loc type_decl type_expr pld_attributes =
+  let extract_default_payload = function
+    (* we only accept 1 argument default payload as a string  *)
+    | PStr
+        [
+          {
+            pstr_desc =
+              Pstr_eval
+                ({ pexp_desc = Pexp_constant (Pconst_string (s, _, _)); _ }, _);
+            _;
+          };
+        ] ->
+        Some s
+    | PStr [] -> None
+    | PStr s ->
+        illegal_derivation loc
+          ("only stringify default values are accepted (e.g: \"1\" instead of \
+            1), given: " ^ string_of_structure s)
+    | _ -> illegal_derivation loc (string_of_type_decl type_decl)
+  in
+  let attrs, attrs_with_payload =
+    List.split
+    @@ List.map
+         (fun { attr_name = { txt; _ }; attr_payload; _ } ->
+           (txt, (txt, extract_default_payload attr_payload)))
+         pld_attributes
+  in
+  match type_expr with
+  | _ when List.mem "default" attrs ->
+      (With_default, List.assoc "default" attrs_with_payload)
+  | (Option (_, _, _) : Atd.Ast.type_expr) when List.mem "required" attrs ->
+      (Required, None)
+  | (Option (_, _, _) : Atd.Ast.type_expr) ->
+      (Optional, None)
+      (* optional types are optional by default unlessa annotated with required *)
+  | _ when List.mem "optional" attrs ->
+      illegal_derivation loc
+        ("must be an option type to have optional annotation: "
+        ^ string_of_type_decl type_decl)
+  | _ -> (Required, None)
 
 let rec type_def_of_type_declaration loc type_decl =
   let loc = atd_loc_of_parsetree_loc loc in
@@ -101,19 +149,20 @@ and type_expr_of_type_declaration type_decl =
       Record
         ( loc,
           List.map
-            (fun { pld_type; pld_name; _ } ->
+            (fun { pld_type; pld_name; pld_attributes; _ } ->
               let loc = atd_loc_of_parsetree_loc pld_name.loc in
               let type_expr = type_expr_of_core_type loc' pld_type in
-              `Field
-                ( loc,
-                  ( pld_name.txt,
-                    (match type_expr with
-                    | (Option (_, _, _) : Atd.Ast.type_expr) -> Optional
-                    | _ ->
-                        Required
-                        (* TODO: better way?, need more annotation logic*)),
-                    [] (* TODO: annotations *) ),
-                  type_expr ))
+              let field_type, payload =
+                record_type_of_attributes loc' type_decl type_expr
+                  pld_attributes
+              in
+              let annots =
+                match field_type with
+                | With_default ->
+                    [ ("ocaml", (loc, [ ("default", (loc, payload)) ])) ]
+                | _ -> []
+              in
+              `Field (loc, (pld_name.txt, field_type, annots), type_expr))
             l,
           [] (* TODO: annotations *) )
   | { ptype_kind = Ptype_variant l; _ } as type_decl ->
