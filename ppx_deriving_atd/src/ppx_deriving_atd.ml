@@ -1,6 +1,4 @@
 open Ppxlib
-open Ast_helper
-open Ast_builder.Default
 
 (* Some design decisions:
    - ignoring names lookup: each deriving is done on a particular type so will not have stubs defined for any non-primitive types. checks on types are done by the OCaml compiler.
@@ -24,7 +22,7 @@ let impl_generator_of attr impl =
 let print_location { loc_start; loc_end; _ } =
   Atd.Ast.string_of_loc (loc_start, loc_end)
 
-let generate_impl_atd ~ctxt (rec_flag, type_decls) skip_unknown =
+let generate_impl_atd ~ctxt (_rec_flag, type_decls) _skip_unknown =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   let type_defs =
     List.map (Convert.type_def_of_type_declaration loc) type_decls

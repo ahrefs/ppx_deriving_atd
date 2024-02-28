@@ -1,6 +1,4 @@
 open Ppxlib
-open Ast_helper
-open Ast_builder.Default
 open Printf
 
 let atd_loc_of_parsetree_loc { loc_start; loc_end; _ } = (loc_start, loc_end)
@@ -103,7 +101,7 @@ and type_expr_of_type_declaration type_decl =
       Record
         ( loc,
           List.map
-            (fun { pld_type; pld_loc; pld_name; _ } ->
+            (fun { pld_type; pld_name; _ } ->
               let loc = atd_loc_of_parsetree_loc pld_name.loc in
               let type_expr = type_expr_of_core_type loc' pld_type in
               `Field
@@ -172,11 +170,10 @@ and type_expr_of_core_type loc' core_type =
   | Ptyp_constr
       ({ txt = Lident id (* TODO: qualified names e.g. Module.x *); loc }, _)
     when List.mem id [ "list"; "option" ] ->
-      raise
-        (Invalid_argument
-           (sprintf "%s: has multiple types for %s (invalid)"
-              (string_of_core_type core_type)
-              id))
+      unsupported_derivation loc
+        (sprintf "%s: has multiple types for %s (invalid)"
+           (string_of_core_type core_type)
+           id)
   | Ptyp_constr
       ({ txt = Lident id (* TODO: qualified names e.g. Module.x *); loc }, l) ->
       let loc = atd_loc_of_parsetree_loc loc in
