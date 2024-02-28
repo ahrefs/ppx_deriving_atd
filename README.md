@@ -42,7 +42,9 @@ let deserialized_value = my_type_of_json_string {|{"field1":"value1"}|}
 ```
 
 #### required
-Annoating a record field with `[@required]` will always keep the optional value in the serialized record and ATD will keep looking for it when deserializing the records.
+All option typed fields are "optional" by default, i.e. if the value is `None`, it will not be included when serialization and when deserializing, ATD will assume the value is `None` if the field is not present.  
+
+Annotating a record field with `[@required]` will always keep the optional value in the serialized record and ATD will keep looking for it when deserializing the records.
 
 ```ocaml
 type my_type = {
