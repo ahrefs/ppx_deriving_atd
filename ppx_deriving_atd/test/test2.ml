@@ -1,5 +1,1 @@
-type z = {
- zz: string option;
- zzz: int;
- zzzz: bool;
-}[@@deriving atd]
+type z = { zz : string; zzz : int; zzzz : bool } [@@deriving atd_j]
