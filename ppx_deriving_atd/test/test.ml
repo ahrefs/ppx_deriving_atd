@@ -1,6 +1,6 @@
 type u = { x : int } [@@deriving atd_j]
 
-type x = { abc : string option; def : int; ghi : bool [@default "true"] }
+type x = { abc : string option; def : int; ghi : bool [@default "false"] }
 [@@deriving atd_j]
 
 type y = { x : x } [@@deriving atd_j]

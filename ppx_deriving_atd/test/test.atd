@@ -1,0 +1,19 @@
+
+type u  = {
+	x : int  ;
+} 
+
+type x  = {
+	?abc : string   option ;
+	def : int  ;
+	~ghi <ocaml default="false">: bool  ;
+} 
+
+type y  = {
+	x : x  ;
+} 
+
+type zz  = {
+	z : z  ;
+	y : y  ;
+} 
