@@ -1,3 +1,5 @@
+type u = { x : int } [@@deriving atd_j]
+
 type x = { abc : string option; def : int; ghi : bool [@default "true"] }
 [@@deriving atd_j]
 
@@ -17,3 +19,5 @@ let () =
   let zz = { z; y = { x } } in
   print_endline @@ Readme.json_string;
   print_endline @@ json_string_of_zz zz
+
+module type TypeExport = sig end [@@deriving atd_j]
