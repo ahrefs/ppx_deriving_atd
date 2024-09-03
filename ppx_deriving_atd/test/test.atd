@@ -1,7 +1,8 @@
 
-type u  = {
-	x : int  ;
+type y  = {
+	x : x  ;
 } 
+
 
 type x  = {
 	?abc : string   option ;
@@ -9,11 +10,7 @@ type x  = {
 	~ghi <ocaml default="false">: bool  ;
 } 
 
-type y  = {
-	x : x  ;
-} 
 
-type zz  = {
-	z : z  ;
-	y : y  ;
+type u  = {
+	x : int  ;
 } 

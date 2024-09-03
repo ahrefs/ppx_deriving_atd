@@ -19,5 +19,3 @@ let () =
   let zz = { z; y = { x } } in
   print_endline @@ Readme.json_string;
   print_endline @@ json_string_of_zz zz
-
-module type TypeExport = sig end [@@deriving atd_j]

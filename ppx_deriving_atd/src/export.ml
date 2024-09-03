@@ -83,8 +83,10 @@ and export_annot_section_list (name, (_, annot_fields)) =
 and export_annot_field_list (name, (_, value)) =
   match value with None -> name | Some v -> sprintf {|%s=%S|} name v
 
-let export_module_body_string (items : Atd.Ast.module_body) =
-  String.concat "\n" @@ List.map export_module_item_string items
+let get_type_name (Type (_, (name, _, _), _) : Atd.Ast.module_item) = name
+
+let export_module_body_string =
+  List.map (fun x -> (get_type_name x, export_module_item_string x))
 
 (* ******************* *)
 
@@ -112,9 +114,11 @@ let test () =
     let (_head, items), _types = Atd.Util.load_string type_str in
     export_module_body_string items
   in
+  let exported = List.map snd exported |> String.concat "\n" in
   printf "exported:\n%s\n" exported;
   let reloaded =
     let (_head, items), _types = Atd.Util.load_string exported in
     export_module_body_string items
   in
+  let reloaded = List.map snd reloaded |> String.concat "\n" in
   printf "reloaded:\n%s\n" reloaded
