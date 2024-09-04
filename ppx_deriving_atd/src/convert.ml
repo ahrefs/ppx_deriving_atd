@@ -4,35 +4,26 @@ open Atd.Ast
 open Common
 
 let record_type_of_attributes loc type_decl type_expr pld_attributes =
-  let extract_default_payload = function
-    (* we only accept 1 argument default payload as a string  *)
-    | PStr
-        [
-          {
-            pstr_desc =
-              Pstr_eval
-                ({ pexp_desc = Pexp_constant (Pconst_string (s, _, _)); _ }, _);
-            _;
-          };
-        ] ->
-        Some s
-    | PStr [] -> None
-    | PStr s ->
+  let extract_single_string = Ast_pattern.(single_expr_payload (estring __)) in
+  let extract_default_payload p =
+    Ast_pattern.parse extract_single_string loc
+      ~on_error:(fun () ->
         illegal_derivation loc
-          ("only stringify default values are accepted (e.g: \"1\" instead of \
-            1), given: " ^ string_of_structure s)
-    | _ -> illegal_derivation loc (string_of_type_decl type_decl)
+          "only stringify default values are accepted (e.g: \"1\" instead of 1)")
+      p Fun.id
   in
   let attrs, attrs_with_payload =
     List.split
     @@ List.map
          (fun { attr_name = { txt; _ }; attr_payload; _ } ->
-           (txt, (txt, extract_default_payload attr_payload)))
+           (txt, (txt, attr_payload)))
          pld_attributes
   in
   match type_expr with
   | _ when List.mem "default" attrs ->
-      (With_default, List.assoc "default" attrs_with_payload)
+      ( With_default,
+        Some (extract_default_payload (List.assoc "default" attrs_with_payload))
+      )
   | (Option (_, _, _) : Atd.Ast.type_expr) when List.mem "required" attrs ->
       (Required, None)
   | (Option (_, _, _) : Atd.Ast.type_expr) ->

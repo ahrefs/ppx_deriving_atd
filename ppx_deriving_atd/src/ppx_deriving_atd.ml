@@ -79,9 +79,8 @@ let collect_atd_strings_and_export strs =
       ~on_error:(fun _ -> None)
       str
       (fun k v ->
-        match k with
-        | k when k = tmp_file_binding || is_type_name_binding k -> Some (k, v)
-        | _ -> None)
+        if k = tmp_file_binding || is_type_name_binding k then Some (k, v)
+        else None)
   in
   let get_let_bindings =
     object
