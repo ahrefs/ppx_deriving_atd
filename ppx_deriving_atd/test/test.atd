@@ -1,4 +1,7 @@
 
+type z <ocaml from="Test2"> = abstract  
+
+
 type zz  = {
 	z : z  ;
 	y : y  ;

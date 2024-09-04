@@ -10,7 +10,7 @@ open Printf
 
 let tmp_file_binding = "_EXPORT_ATD_FILENAME"
 let type_name_binding = sprintf "_EXPORT_ATD_%s_STRING"
-let type_name_binding_re = Re2.create_exn {|_EXPORT_ATD_\S_STRING|}
+let type_name_binding_re = Re2.create_exn {|_EXPORT_ATD_\S+_STRING|}
 let is_type_name_binding = Re2.matches type_name_binding_re
 
 let print_location { loc_start; loc_end; _ } =
@@ -19,8 +19,9 @@ let print_location { loc_start; loc_end; _ } =
 let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   let type_defs =
-    List.map (Convert.type_def_of_type_declaration loc) type_decls
+    (List.concat_map (Convert.type_def_of_type_declaration loc)) type_decls
   in
+
   let atd_strings =
     let tmp_file = atd_filename_from_loc loc in
     let type_strs = Export.export_module_body_string type_defs in
@@ -41,24 +42,7 @@ let %s = %S
     in
     Parse.implementation (Lexing.from_string (String.concat "\n" type_strs))
   in
-  let atd_loc = atd_loc_of_parsetree_loc loc in
-  let head, m0 = ((atd_loc, [] (*TODO: annotations*)), type_defs) in
-  let m1', original_types =
-    Atd.Expand.expand_module_body ~keep_builtins:false ~keep_poly:true m0
-  in
-  let m1 = Atd.Util.tsort m1' in
-  let defs = Atdgen_emit.Oj_mapping.defs_of_atd_modules m1 ~target:Json in
-  let ocaml_typedefs =
-    Atdgen_emit.Ocaml.ocaml_of_atd ~target:Json ~type_aliases:None (head, m1)
-  in
-  let ml =
-    Atdgen_emit.Oj_emit.make_ml ~header:"" ~opens:[] ~with_typedefs:false
-      ~with_create:true ~with_fundefs:true ~std:true ~unknown_field_handler:None
-      ~force_defaults:true ~preprocess_input:None ~original_types
-      ~ocaml_version:None ocaml_typedefs
-      (Atdgen_emit.Mapping.make_deref defs)
-      defs
-  in
+  let ml = Convert.ml_string_of_atd_module_items loc type_defs in
   List.concat
     [
       List.map
@@ -95,19 +79,21 @@ let collect_atd_strings_and_export strs =
     end
   in
   let bindings = get_let_bindings#structure strs [] in
-  let tmp_file =
+  let () =
     match List.assoc_opt tmp_file_binding bindings with
-    | None -> failwith "no extract file found!"
-    | Some x -> x
+    | None ->
+        ()
+        (* if no filename is found, then no export because must be some problem with previous step *)
+    | Some tmp_file ->
+        let atd_string =
+          List.filter_map
+            (fun (k, v) -> if k = tmp_file_binding then None else Some v)
+            bindings
+          |> String.concat "\n"
+        in
+        let handler = Stdlib.open_out tmp_file in
+        Stdlib.output_string handler atd_string
   in
-  let atd_string =
-    List.filter_map
-      (fun (k, v) -> if k = tmp_file_binding then None else Some v)
-      bindings
-    |> String.concat "\n"
-  in
-  let handler = Stdlib.open_out tmp_file in
-  Stdlib.output_string handler atd_string;
   strs
 
 let deriver =
