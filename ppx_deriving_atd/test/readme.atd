@@ -1,0 +1,11 @@
+
+type my_type2  = {
+	?field1 : string   option ;
+	field2 : int   option ;
+} 
+
+
+type my_type  = {
+	field1 : string  ;
+	field2 : int  ;
+} 

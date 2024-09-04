@@ -1,4 +1,10 @@
 
+type zz  = {
+	z : z  ;
+	y : y  ;
+} 
+
+
 type y  = {
 	x : x  ;
 } 
