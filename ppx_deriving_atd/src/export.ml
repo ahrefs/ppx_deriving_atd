@@ -87,38 +87,3 @@ let get_type_name (Type (_, (name, _, _), _) : Atd.Ast.module_item) = name
 
 let export_module_body_string =
   List.map (fun x -> (get_type_name x, export_module_item_string x))
-
-(* ******************* *)
-
-let type_str =
-  {|
-type x = {
-  ?abc : string option;
-  def : int;
-  ~ghi <ocaml default="true"> : bool;
-  ~jkl <ocaml default="\"abc\"">: string;
-}
-
-type y = { x : x }
-
-type z = [
- English
-| Other of string
-]
-
-type zz = { z : z; y: y}
-|}
-
-let test () =
-  let exported =
-    let (_head, items), _types = Atd.Util.load_string type_str in
-    export_module_body_string items
-  in
-  let exported = List.map snd exported |> String.concat "\n" in
-  printf "exported:\n%s\n" exported;
-  let reloaded =
-    let (_head, items), _types = Atd.Util.load_string exported in
-    export_module_body_string items
-  in
-  let reloaded = List.map snd reloaded |> String.concat "\n" in
-  printf "reloaded:\n%s\n" reloaded

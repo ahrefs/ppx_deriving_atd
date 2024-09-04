@@ -4,6 +4,7 @@ open Atd.Ast
 open Common
 
 let record_type_of_attributes loc type_decl type_expr pld_attributes =
+  (* might be better to type-check default payload here then do %S *)
   let extract_single_string = Ast_pattern.(single_expr_payload (estring __)) in
   let extract_default_payload p =
     Ast_pattern.parse extract_single_string loc
@@ -12,28 +13,27 @@ let record_type_of_attributes loc type_decl type_expr pld_attributes =
           "only stringify default values are accepted (e.g: \"1\" instead of 1)")
       p Fun.id
   in
-  let attrs, attrs_with_payload =
-    List.split
-    @@ List.map
-         (fun { attr_name = { txt; _ }; attr_payload; _ } ->
-           (txt, (txt, attr_payload)))
-         pld_attributes
+  let attrs =
+    List.map
+      (fun { attr_name = { txt; _ }; attr_payload; _ } -> (txt, attr_payload))
+      pld_attributes
+    |> List.to_seq |> Hashtbl.of_seq
   in
-  match type_expr with
-  | _ when List.mem "default" attrs ->
-      ( With_default,
-        Some (extract_default_payload (List.assoc "default" attrs_with_payload))
-      )
-  | (Option (_, _, _) : Atd.Ast.type_expr) when List.mem "required" attrs ->
-      (Required, None)
-  | (Option (_, _, _) : Atd.Ast.type_expr) ->
-      (Optional, None)
-      (* optional types are optional by default unlessa annotated with required *)
-  | _ when List.mem "optional" attrs ->
-      illegal_derivation loc
-        ("must be an option type to have optional annotation: "
-        ^ string_of_type_decl type_decl)
-  | _ -> (Required, None)
+  match Hashtbl.find_opt attrs "default" with
+  | Some payload -> (With_default, Some (extract_default_payload payload))
+  | None -> (
+      match type_expr with
+      | (Option (_, _, _) : Atd.Ast.type_expr) when Hashtbl.mem attrs "required"
+        ->
+          (Required, None)
+      | (Option (_, _, _) : Atd.Ast.type_expr) ->
+          (Optional, None)
+          (* optional types are optional by default unlessa annotated with required *)
+      | _ when Hashtbl.mem attrs "optional" ->
+          illegal_derivation loc
+            ("must be an option type to have optional annotation: "
+            ^ string_of_type_decl type_decl)
+      | _ -> (Required, None))
 
 let rec type_def_of_type_declaration loc type_decl =
   let loc = atd_loc_of_parsetree_loc loc in
