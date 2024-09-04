@@ -22,18 +22,12 @@ let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
     List.map (Convert.type_def_of_type_declaration loc) type_decls
   in
   let atd_strings =
-    (* Export.test (); *)
-    (* if Sys.file_exists tmp_file then *)
-    (*   let handler = *)
-    (*     Stdlib.open_out_gen *)
-    (*       [ Open_wronly; Open_append; Open_text ] *)
-    (*       0o666 tmp_file *)
-    (*   in *)
     let tmp_file = atd_filename_from_loc loc in
     let type_strs = Export.export_module_body_string type_defs in
     let type_strs =
       List.map
         (fun (type_name, type_str) ->
+          (* better way to do this? have to keep output in code :/ *)
           sprintf
             {|
 let %s = %S
@@ -46,8 +40,6 @@ let %s = %S
         type_strs
     in
     Parse.implementation (Lexing.from_string (String.concat "\n" type_strs))
-    (*   Stdlib.output_string handler type_strs *)
-    (* else () *)
   in
   let atd_loc = atd_loc_of_parsetree_loc loc in
   let head, m0 = ((atd_loc, [] (*TODO: annotations*)), type_defs) in
@@ -124,8 +116,3 @@ let deriver =
     "collect_atd_strings_and_export";
   Deriving.add "atd_j"
     ~str_type_decl:(Deriving.Generator.V2.make_noarg generate_impl_atd)
-
-(* need some global transformation:
-   - generate strings into unique variables
-   - iterate through patterns of unique variables
-*)
