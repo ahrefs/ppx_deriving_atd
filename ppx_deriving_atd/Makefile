@@ -1,6 +1,8 @@
 include ../Makefile
 
-.PHONY: test
+.PHONY: test_atd test
 
-test:
-	dune build @runtest
+test/%.atd: test
+	$(EXEC) atdgen -j -j-std $@ -o -
+
+test_atd: test/test.atd test/test2.atd test/readme.atd
