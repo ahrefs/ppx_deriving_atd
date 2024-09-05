@@ -2,7 +2,7 @@
 
 (name ppx_deriving_atd)
 
-(generate_opam_files true)
+(generate_opam_files false)
 
 (source
  (github ahrefs/ppx_deriving_atd))

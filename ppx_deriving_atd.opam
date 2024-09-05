@@ -14,9 +14,11 @@ depends: [
   "ocaml"
   "dune" {>= "3.10"}
   "ppxlib"
+  "atd"
   "re2"
   "odoc" {with-doc}
 ]
+pin-depends: [ "atd.ppx_deriving_atd" "git+file:///atd" ] # or file:/// if path pinned
 build: [
   ["dune" "subst"] {dev}
   [
