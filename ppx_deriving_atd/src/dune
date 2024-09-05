@@ -1,7 +1,7 @@
 (library
  (name ppx_deriving_atd)
  (public_name ppx_deriving_atd)
- (kind ppx_rewriter)
+ (kind ppx_deriver)
  (libraries atd atdgen atdgen-emit atdgen-runtime ppxlib re2)
  (ppx_runtime_libraries atd atdgen atdgen-runtime)
  (preprocess
