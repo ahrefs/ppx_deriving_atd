@@ -22,10 +22,6 @@
  (depends
   ocaml
   dune
-  atd
-  atdgen
-  atdgen-emit
-  atdgen-runtime
   ppxlib
   re2)
  (tags
