@@ -91,3 +91,5 @@ let string_of_structure = Pprintast.string_of_structure
 
 let atd_filename_from_loc ?(extension = ".atd") loc =
   Filename.chop_extension loc.loc_start.pos_fname ^ extension
+
+let make_ghost_loc loc = { loc with loc_ghost = true }

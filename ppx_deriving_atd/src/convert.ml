@@ -24,11 +24,13 @@ let ml_string_of_atd_module_items loc type_defs =
 let record_type_of_attributes loc type_decl type_expr pld_attributes =
   (* might be better to type-check default payload here then do %S *)
   let extract_single_string = Ast_pattern.(single_expr_payload (estring __)) in
-  let extract_default_payload p =
+  let extract_default_payload ~type_decl p =
     Ast_pattern.parse extract_single_string loc
       ~on_error:(fun () ->
         illegal_derivation loc
-          "only stringify default values are accepted (e.g: \"1\" instead of 1)")
+          "only stringify default values are accepted (e.g: \"1\" instead of \
+           1): "
+        ^ string_of_type_decl type_decl)
       p Fun.id
   in
   let attrs =
@@ -38,7 +40,8 @@ let record_type_of_attributes loc type_decl type_expr pld_attributes =
     |> List.to_seq |> Hashtbl.of_seq
   in
   match Hashtbl.find_opt attrs "default" with
-  | Some payload -> (With_default, Some (extract_default_payload payload))
+  | Some payload ->
+      (With_default, Some (extract_default_payload ~type_decl payload))
   | None -> (
       match type_expr with
       | (Option (_, _, _) : Atd.Ast.type_expr) when Hashtbl.mem attrs "required"

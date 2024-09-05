@@ -3,15 +3,26 @@ open Common
 open Printf
 
 (* Some design decisions:
-   - ignoring names lookup: each deriving is done on a particular type so will not have stubs defined for any non-primitive types. checks on types are done by the OCaml compiler.
+   - ignoring names lookup (in ATD): each deriving is done on a particular type so will not have stubs defined for any non-primitive types. checks on types are done by the OCaml compiler.
    - to generate ATD ASTs from OCaml AST? or emit OCaml functions directly? Generating ATD ASTs is slightly more disciplined and easier.
    - do we need another level of module now? X_j.of_string and X_j.to_string? or stick to top-level x_j_to_string and x_j_of_string. Keeping it top-level for ease of use.
+
+   - another way to avoid global transformation is to only allow deriving atd from a module--this will make sure all the type definitions are processed and then exported in one go
 *)
 
-let tmp_file_binding = "_EXPORT_ATD_FILENAME"
-let type_name_binding = sprintf "_EXPORT_ATD_%s_STRING"
+let tmp_file_binding' = "_EXPORT_ATD_FILENAME"
+let tmp_file_binding loc = Ast_builder.Default.pvar ~loc tmp_file_binding'
+
+let type_name_binding x loc =
+  sprintf "_EXPORT_ATD_%s_STRING" x |> Ast_builder.Default.pvar ~loc
+
 let type_name_binding_re = Re2.create_exn {|_EXPORT_ATD_\S+_STRING|}
 let is_type_name_binding = Re2.matches type_name_binding_re
+
+let let_str_generator loc mk_loc_pat s =
+  let pat = mk_loc_pat loc in
+  let expr = Ast_builder.Default.estring ~loc s in
+  [%stri let [%p pat] = [%e expr]]
 
 let print_location { loc_start; loc_end; _ } =
   Atd.Ast.string_of_loc (loc_start, loc_end)
@@ -25,23 +36,16 @@ let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
   let atd_strings =
     let tmp_file = atd_filename_from_loc loc in
     let type_strs = Export.export_module_body_string type_defs in
-    let type_strs =
-      List.map
-        (fun (type_name, type_str) ->
-          (* better way to do this? have to keep output in code :/ *)
-          sprintf
-            {|
-let %s = %S
-          
-let %s = %S
-|}
-            tmp_file_binding tmp_file
-            (type_name_binding type_name)
-            type_str)
-        type_strs
-    in
-    Parse.implementation (Lexing.from_string (String.concat "\n" type_strs))
+    List.concat_map
+      (fun (type_name, type_str) ->
+        (* better way to do this? have to keep output in code :/ *)
+        [
+          let_str_generator loc tmp_file_binding tmp_file;
+          let_str_generator loc (type_name_binding type_name) type_str;
+        ])
+      type_strs
   in
+
   let ml = Convert.ml_string_of_atd_module_items loc type_defs in
   List.concat
     [
@@ -63,7 +67,7 @@ let collect_atd_strings_and_export strs =
       ~on_error:(fun _ -> None)
       str
       (fun k v ->
-        if k = tmp_file_binding || is_type_name_binding k then Some (k, v)
+        if k = tmp_file_binding' || is_type_name_binding k then Some (k, v)
         else None)
   in
   let get_let_bindings =
@@ -80,14 +84,14 @@ let collect_atd_strings_and_export strs =
   in
   let bindings = get_let_bindings#structure strs [] in
   let () =
-    match List.assoc_opt tmp_file_binding bindings with
+    match List.assoc_opt tmp_file_binding' bindings with
     | None ->
         ()
         (* if no filename is found, then no export because must be some problem with previous step *)
     | Some tmp_file ->
         let atd_string =
           List.filter_map
-            (fun (k, v) -> if k = tmp_file_binding then None else Some v)
+            (fun (k, v) -> if k = tmp_file_binding' then None else Some v)
             bindings
           |> String.concat "\n"
         in

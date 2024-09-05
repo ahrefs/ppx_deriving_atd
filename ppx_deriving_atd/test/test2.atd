@@ -1,4 +1,9 @@
 
+type t  = {
+	a : int  ;
+} 
+
+
 type z  = {
 	zz : string  ;
 	zzz : int  ;

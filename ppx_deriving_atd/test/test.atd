@@ -1,4 +1,12 @@
 
+type t <ocaml from="Test2.T"> = abstract  
+
+
+type at  = {
+	a : t  ;
+} 
+
+
 type z <ocaml from="Test2"> = abstract  
 
 
