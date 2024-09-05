@@ -15,10 +15,18 @@ depends: [
   "dune" {>= "3.10"}
   "ppxlib"
   "atd"
+  "atdgen"
+  "atdgen-emit"
+  "atdgen-runtime"
   "re2"
   "odoc" {with-doc}
 ]
-pin-depends: [ "atd.ppx_deriving_atd" "git+file:///atd" ] # or file:/// if path pinned
+pin-depends: [
+  "atd.ppx_deriving_atd" "git+file:///atd"
+  "atdgen.ppx_deriving_atd" "git+file:///atdgen"
+  "atdgen-emit.ppx_deriving_atd" "git+file:///atdgen-emit"
+  "atdgen-runtime.ppx_deriving_atd" "git+file:///atdgen-runtime"
+]
 build: [
   ["dune" "subst"] {dev}
   [
