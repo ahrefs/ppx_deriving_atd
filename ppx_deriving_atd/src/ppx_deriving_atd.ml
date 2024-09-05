@@ -2,6 +2,14 @@ open Ppxlib
 open Common
 open Printf
 
+let export_dir = ref None
+let set_export_dir dn = export_dir := dn
+
+let () =
+  Driver.add_arg "-export_dir"
+    (String (fun s -> export_dir := Some s))
+    ~doc:"<dir> absolute path to export ATD files to"
+
 (* Some design decisions:
    - ignoring names lookup (in ATD): each deriving is done on a particular type so will not have stubs defined for any non-primitive types. checks on types are done by the OCaml compiler.
    - to generate ATD ASTs from OCaml AST? or emit OCaml functions directly? Generating ATD ASTs is slightly more disciplined and easier.
@@ -34,7 +42,7 @@ let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
   in
 
   let atd_strings =
-    let tmp_file = atd_filename_from_loc loc in
+    let tmp_file = atd_filename_from_loc !export_dir loc in
     let type_strs = Export.export_module_body_string type_defs in
     List.concat_map
       (fun (type_name, type_str) ->
@@ -100,8 +108,10 @@ let collect_atd_strings_and_export strs =
   in
   strs
 
-let deriver =
+let () =
   Driver.register_transformation ~impl:collect_atd_strings_and_export
-    "collect_atd_strings_and_export";
+    "collect_atd_strings_and_export"
+
+let deriver =
   Deriving.add "atd_j"
     ~str_type_decl:(Deriving.Generator.V2.make_noarg generate_impl_atd)

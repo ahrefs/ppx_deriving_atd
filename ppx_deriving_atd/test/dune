@@ -1,4 +1,7 @@
 (test
  (name test)
- (preprocess (pps ppx_deriving_atd ppx_deriving.show)))
+ (preprocess
+  (pps
+   ppx_deriving_atd
+   ppx_deriving.show)))
 

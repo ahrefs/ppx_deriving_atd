@@ -24,6 +24,10 @@ let illegal_derivation loc msg =
   raise_errorf ~loc "Illegal derivation: %s at %s" msg
     (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
 
+let failure loc msg =
+  raise_errorf ~loc "Failure: %s at %s" msg
+    (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
+
 (* PARSETREE AST UTILS *)
 let rec fold_loc_exp_desc loc exp_desc =
   match exp_desc with
@@ -89,7 +93,30 @@ let string_of_core_type = string_of_parse_tree Pprintast.core_type
 let string_of_type_decl = string_of_parse_tree Pprintast.type_declaration
 let string_of_structure = Pprintast.string_of_structure
 
-let atd_filename_from_loc ?(extension = ".atd") loc =
-  Filename.chop_extension loc.loc_start.pos_fname ^ extension
+let atd_filename_from_loc ?(extension = ".atd") export_dir loc =
+  match export_dir with
+  | None -> (
+      (* FIXME: need to figure out a better way to export to current dir, ../../../../ escape sandbox:
+         pwd: project_root/_build/.sandbox/7e21a9c5f6aba1ffb8773c059736e774/default *)
+      let filename =
+        List.fold_left Filename.concat Filename.current_dir_name
+          [
+            "..";
+            "..";
+            "..";
+            "..";
+            Filename.chop_extension loc.loc_start.pos_fname ^ extension;
+          ]
+      in
+      try
+        let (_ : bool) = Filename.dirname filename |> Sys.is_directory in
+        filename
+      with Sys_error _e ->
+        failure loc
+          (sprintf "%s do not exist, please provide absolute export directory"
+             filename))
+  | Some export_dir ->
+      let name = Filename.basename loc.loc_start.pos_fname in
+      Filename.concat export_dir (Filename.chop_extension name ^ extension)
 
 let make_ghost_loc loc = { loc with loc_ghost = true }
