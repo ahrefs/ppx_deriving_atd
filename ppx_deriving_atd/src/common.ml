@@ -114,7 +114,7 @@ let atd_filename_from_loc ?(extension = ".atd") export_dir loc =
       with Sys_error _e ->
         failure loc
           (sprintf "%s do not exist, please provide absolute export directory"
-             filename))
+             (Filename.concat (Sys.getcwd ()) filename)))
   | Some export_dir ->
       let name = Filename.basename loc.loc_start.pos_fname in
       Filename.concat export_dir (Filename.chop_extension name ^ extension)
