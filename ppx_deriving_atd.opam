@@ -13,10 +13,6 @@ bug-reports: "https://github.com/ahrefs/ppx_deriving_atd/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.10"}
-  "atd"
-  "atdgen"
-  "atdgen-emit"
-  "atdgen-runtime"
   "ppxlib"
   "re2"
   "odoc" {with-doc}
