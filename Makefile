@@ -1,16 +1,21 @@
-.PHONY: test watch default top clean
+.PHONY: test watch default top clean test_atd test
 
 default:
-	dune build
+	dune build ./src
 
 watch:
-	dune build -w
+	dune build ./src -w
 
 test:
-	dune build @runtest
+	dune build ./test @runtest
 
 top:
-	dune utop
+	dune utop ./src ppx_deriving_atd
 
 clean:
 	dune clean
+
+test/%.atd: test
+	$(EXEC) atdgen -j -j-std $@ -o -
+
+test_atd: test/test.atd test/test2.atd test/readme.atd

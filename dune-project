@@ -2,13 +2,31 @@
 
 (name ppx_deriving_atd)
 
-(generate_opam_files false)
+(generate_opam_files true)
 
 (source
- (github sewen-thy/ppx_deriving_atd))
+ (github ahrefs/ppx_deriving_atd))
 
-(license ISC)
+(authors "Author Name")
 
-(authors "Sewen Thy")
+(maintainers "Maintainer Name")
 
-(maintainers "sewen.thy@ahrefs.com")
+(license "MIT")
+
+(documentation https://git.ahrefs.com/ahrefs/ppx_deriving_atd/README.md)
+
+(package
+ (name ppx_deriving_atd)
+ (synopsis "PPX deriver for JSON and ATD files")
+ (description "Using OCaml as source of truth for JSON (de)serializing and generate ATD file for other services to use..")
+ (depends
+  ocaml
+  dune
+  atd
+  atdgen
+  atdgen-emit
+  atdgen-runtime
+  ppxlib
+  re2)
+ (tags
+  (topics ATD ppx_deriving)))
