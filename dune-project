@@ -7,7 +7,7 @@
 (source
  (github ahrefs/ppx_deriving_atd))
 
-(license ISC)
+(license MIT)
 
 (authors "Sewen Thy")
 
@@ -15,8 +15,8 @@
 
 (package
  (name ppx_deriving_atd)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune atd ppxlib re2)
+ (synopsis "A ppx_deriving plugin for ATD")
+ (description "A ppx_deriving plugin for ATD")
+ (depends ocaml dune atd ppxlib)
  (tags
-  (topics "to describe" your project)))
+  (topics "ppx" "deriving" "atd")))

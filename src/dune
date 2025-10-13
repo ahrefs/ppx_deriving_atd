@@ -2,7 +2,7 @@
  (name ppx_deriving_atd)
  (public_name ppx_deriving_atd)
  (kind ppx_rewriter)
- (libraries atd ppxlib re2)
+ (libraries atd ppxlib)
  (ppx_runtime_libraries atd)
  (preprocess
   (pps ppxlib.metaquot)))
