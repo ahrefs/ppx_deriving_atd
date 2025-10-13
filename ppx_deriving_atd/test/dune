@@ -1,4 +1,22 @@
-(test
- (name test)
- (preprocess (pps ppx_deriving_atd ppx_deriving.show)))
+(executable
+ (name export_atd)
+ (libraries ppx_deriving_atd)
+ (preprocess (pps ppx_deriving_atd)))
 
+(rule
+ (alias gen)
+ (targets test.atd.out test2.atd.out readme.atd.out)
+ (action
+  (run ./export_atd.exe)))
+
+(rule
+ (alias gen)
+ (action (diff test.atd test.atd.out)))
+
+(rule
+ (alias gen)
+ (action (diff test2.atd test2.atd.out)))
+
+(rule
+ (alias gen)
+ (action (diff readme.atd readme.atd.out)))

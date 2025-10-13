@@ -25,6 +25,17 @@ let illegal_derivation loc msg =
     (loc |> atd_loc_of_parsetree_loc |> Atd.Ast.string_of_loc)
 
 (* PARSETREE AST UTILS *)
+let string_of_parse_tree ff x =
+  let open Format in
+  ignore (flush_str_formatter ());
+  let f = str_formatter in
+  ff f x;
+  flush_str_formatter ()
+
+let string_of_core_type = string_of_parse_tree Pprintast.core_type
+let string_of_type_decl = string_of_parse_tree Pprintast.type_declaration
+let string_of_structure = Pprintast.string_of_structure
+
 let rec fold_loc_exp_desc loc exp_desc =
   match exp_desc with
   | Parsetree.Pexp_ident e -> Pexp_ident { e with loc }
@@ -77,17 +88,6 @@ let fold_loc_structure_item loc x =
     | e -> e
   in
   { pstr_loc = loc; pstr_desc }
-
-let string_of_parse_tree ff x =
-  let open Format in
-  ignore (flush_str_formatter ());
-  let f = str_formatter in
-  ff f x;
-  flush_str_formatter ()
-
-let string_of_core_type = string_of_parse_tree Pprintast.core_type
-let string_of_type_decl = string_of_parse_tree Pprintast.type_declaration
-let string_of_structure = Pprintast.string_of_structure
 
 let atd_filename_from_loc ?(extension = ".atd") loc =
   Filename.chop_extension loc.loc_start.pos_fname ^ extension

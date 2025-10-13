@@ -1,27 +1,50 @@
 # ppx\_deriving\_atd
 
 ## Overview
-This package introduces a PPX (Preprocessor Extension) for OCaml that automates the generation of serialization and deserialization functions for your OCaml types using [ATD](https://github.com/ahrefs/atd) without creating an ATD file.  
-
-Currently supporting JSON derivation only:
-- `json_string_of_t`: Serializes an OCaml value to a JSON string.
-- `t_of_json_string`: Deserializes a JSON string back into an OCaml value.
+This is a PPX deriver that creates [ATD](https://github.com/ahrefs/atd) files.  
 
 ## Usage
+The current setup is not very ergonomic.
 
+In your normal OCaml files, add the deriving annotation:
 ```ocaml
 type my_type = {
   field1: string;
   field2: int;
-} [@@deriving atd_j]
+} [@@deriving atd]
+```
 
-(* Serialization *)
-let my_value = { field1 = "value1"; field2 = 123 }
-let json_string = json_string_of_my_type my_value (* {"field1":"value1","field2":123} *)
+This will generate a `export_atd_file` function inside the file.  Currently, you can create another file e.g. [export_atd.ml](./ppx_deriving_atd/test/export_atd.ml) and call that function to generate the file:
+```
+let () = Readme.export_atd_file "readme.atd.out"
+```
 
-(* Deserialization *)
-let deserialized_value = my_type_of_json_string json_string
+Notice the `readme.atd.out` extension.  This is because to get the actual file, we need to add some dune rules to call this new executable and then promote this `readme.atd.out` from `_build` directory into `readme.atd` in our current directory.
+```
+(executable
+ (name export_atd)
+ (libraries ppx_deriving_atd)
+ (preprocess (pps ppx_deriving_atd)))
 
+(rule
+ (alias gen)
+ (targets readme.atd.out)
+ (action
+  (run ./export_atd.exe)))
+
+(rule
+ (alias gen)
+ (action (diff readme.atd readme.atd.out)))
+ ```
+
+Now to generate the file, you can run `dune build @gen --auto-promote` and the `readme.atd` file will be generated:
+```
+
+```atd
+type my_type2  = {
+	?field1 : string   option ;
+	field2 : int   option ;
+} 
 ```
 
 ### Supported Annoations
@@ -29,16 +52,17 @@ let deserialized_value = my_type_of_json_string json_string
 Annotating a record field with `[@default v]` will allow the generated reader to give default value for the field (and so the field no longer have an optional type).  Note `v` must be in a stringify form: `"999"` instead of `999`.
 
 ```ocaml
-type my_type = {
+type my_type_default = {
   field1: string;
   field2: int [@default "999"];
-} [@@deriving atd_j]
+} [@@deriving atd]
+```
 
-
-(* Deserialization *)
-let deserialized_value = my_type_of_json_string {|{"field1":"value1"}|}
-(* { field1 = "value1"; field2 = 999 } *)
-
+```atd
+type my_type_default  = {
+	field1 : string  ;
+	~field2 <ocaml default="999">: int  ;
+} 
 ```
 
 #### required
@@ -47,17 +71,15 @@ All option typed fields are "optional" by default, i.e. if the value is `None`, 
 Annotating a record field with `[@required]` will always keep the optional value in the serialized record and ATD will keep looking for it when deserializing the records.
 
 ```ocaml
-type my_type = {
+type my_type_required = {
   field1: string option;
   field2: int option [@required];
-} [@@deriving atd_j]
+} [@@deriving atd]
+```
 
-(* Serialization *)
-let my_value = { field1 = None; field2 = None }
-let json_string = json_string_of_my_type my_value (* {"field2":"None"} *)
-
-(* Deserialization *)
-let deserialized_value = my_type_of_json_string "{}"
-(* Fatal error: exception Atdgen_runtime.Oj_run.Error("Line 1:\nMissing record field field2") *)
-
+```atd
+type my_type_required  = {
+	?field1 : string   option ;
+	field2 : int   option ;
+} 
 ```
