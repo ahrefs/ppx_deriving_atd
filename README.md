@@ -38,7 +38,6 @@ Notice the `readme.atd.out` extension.  This is because to get the actual file, 
  ```
 
 Now to generate the file, you can run `dune build @gen --auto-promote` and the `readme.atd` file will be generated:
-```
 
 ```atd
 type my_type2  = {
