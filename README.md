@@ -14,7 +14,7 @@ type my_type = {
 } [@@deriving atd]
 ```
 
-This will generate a `export_atd_file` function inside the file.  Currently, you can create another file e.g. [export_atd.ml](./ppx_deriving_atd/test/export_atd.ml) and call that function to generate the file:
+This will generate a `export_atd_file` function inside the file.  Currently, you can create another file e.g. [export_atd.ml](./test/export_atd.ml) and call that function to generate the file:
 ```
 let () = Readme.export_atd_file "readme.atd.out"
 ```
