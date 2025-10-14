@@ -57,10 +57,10 @@ type ('a, 'b) poly_t2  = {
 type constrained  = (string , int ) poly_t2 
 
 
-type ('a) one_constrained  = ('a, int ) poly_t2 
+type ('a) one_constrained  <ocaml attr="deriving show {with_path = false}, eq"> = ('a, int ) poly_t2 
 
 
-type constrained_again  = (poly ) one_constrained 
+type constrained_again  <ocaml attr="deriving show {with_path = false}, eq"> = (poly ) one_constrained 
 
 
 type with_attrs  <ocaml attr="deriving show {with_path = false}, eq"> = [

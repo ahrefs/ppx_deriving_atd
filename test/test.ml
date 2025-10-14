@@ -15,8 +15,12 @@ type poly = string [@@deriving atd]
 type 'poly poly_t = { x : 'poly; y : poly } [@@deriving atd]
 type ('a, 'b) poly_t2 = { x : 'a; y : 'b } [@@deriving atd]
 type constrained = (string, int) poly_t2 [@@deriving atd]
-type 'a one_constrained = ('a, int) poly_t2 [@@deriving atd]
-type constrained_again = poly one_constrained [@@deriving atd]
+
+type 'a one_constrained = ('a, int) poly_t2
+[@@deriving atd] [@@attr "deriving show {with_path = false}, eq"]
+
+type constrained_again = poly one_constrained
+[@@deriving atd] [@@attr "deriving show {with_path = false}, eq"]
 
 type with_attrs =
   | Bad_value [@json.name "bad_value"]

@@ -49,17 +49,20 @@ let annot_of_attributes attrs =
   in
   List.filter_map map attrs
 
-let parse_attributes ?ocaml_allowed_attributes ?json_allowed_attributes
-    ?www_allowed_attributes attrs =
-  let allowed_by_section = function
-    | OCaml -> ocaml_allowed_attributes
-    | Json -> json_allowed_attributes
-    | Www -> www_allowed_attributes
+let parse_attributes' ?ocaml_allowed_attributes
+    ?ocaml_disallowed_attributes ?json_allowed_attributes
+    ?json_disallowed_attributes ?www_allowed_attributes
+    ?www_disallowed_attributes attrs =
+  let by_section = function
+    | OCaml -> ocaml_allowed_attributes, ocaml_disallowed_attributes
+    | Json -> json_allowed_attributes, json_disallowed_attributes
+    | Www -> www_allowed_attributes, www_disallowed_attributes
   in
   let check_allowed section name =
-    match allowed_by_section section with
-    | None -> true
-    | Some allowed_attributes -> List.mem name allowed_attributes
+    match by_section section with
+    | None, None -> true
+    | Some allowed_attributes, _ -> List.mem name allowed_attributes
+    | None, Some disallowed_attributes -> not (List.mem name disallowed_attributes)
   in
   let map { attr_name = { txt; loc }; attr_payload; attr_loc } =
     let atd_loc = atd_loc_of_parsetree_loc attr_loc in
@@ -131,6 +134,12 @@ let parse_attributes ?ocaml_allowed_attributes ?json_allowed_attributes
   in
   annots, field_type
 
+let allowed_in_top_level_attributes = [ "attr"; "from" ]
+(* type abc <ocaml attr="..."> = ... *)
+
+let parse_inner_attributes =
+  parse_attributes' ~ocaml_disallowed_attributes:allowed_in_top_level_attributes
+
 let rec type_def_of_type_declaration loc type_decl =
   let loc = atd_loc_of_parsetree_loc loc in
   let {
@@ -146,8 +155,8 @@ let rec type_def_of_type_declaration loc type_decl =
   in
   let type_params = type_param_of_ptype_param ptype_params in
   let annots, _field_type =
-    (* type abc <ocaml attrs="..."> = [ A | B ... ] *)
-    parse_attributes ~ocaml_allowed_attributes:[ "attr"; "from" ]
+    parse_attributes'
+      ~ocaml_allowed_attributes:allowed_in_top_level_attributes
       ptype_attributes
   in
   Type (loc, (name, type_params, annots), type_expr) :: extras
@@ -185,7 +194,7 @@ and type_expr_of_type_declaration ~extras type_decl =
   } ->
       type_expr_of_core_type ~extras loc' core_type
   | { ptype_kind = Ptype_record tys; ptype_attributes; _ } ->
-      let annots, _field_type = parse_attributes ptype_attributes in
+      let annots, _field_type = parse_inner_attributes ptype_attributes in
       let extras', type_exprs =
         List.fold_left
           (fun (extras, type_exprs)
@@ -194,7 +203,7 @@ and type_expr_of_type_declaration ~extras type_decl =
             let type_expr, extras' =
               type_expr_of_core_type ~extras loc' pld_type
             in
-            let annots, field_type = parse_attributes pld_attributes in
+            let annots, field_type = parse_inner_attributes pld_attributes in
             let field_type =
               match field_type with
               | Some field_type -> field_type
@@ -213,7 +222,7 @@ and type_expr_of_type_declaration ~extras type_decl =
     ->
       let bottom_annots, _field_type =
         (* type abc =  [ A | B ... ] <ocaml repr "classic"> *)
-        parse_attributes ~ocaml_allowed_attributes:[ "repr" ]
+        parse_inner_attributes ~ocaml_allowed_attributes:[ "repr" ]
           ~json_allowed_attributes:[ "open_enum" ] ptype_attributes
       in
       let extras', type_exprs =
@@ -222,7 +231,7 @@ and type_expr_of_type_declaration ~extras type_decl =
             | { pcd_name; pcd_args = Pcstr_tuple []; pcd_attributes; _ }
               ->
                 let annots, _field_type =
-                  parse_attributes pcd_attributes
+                  parse_inner_attributes pcd_attributes
                 in
                 ( extras,
                   (Variant (loc, (pcd_name.txt, annots), None) : variant)
@@ -239,7 +248,7 @@ and type_expr_of_type_declaration ~extras type_decl =
                       }
                 in
                 let annots, _field_type =
-                  parse_attributes pcd_attributes
+                  parse_inner_attributes pcd_attributes
                 in
                 ( extras' @ extras,
                   Variant (loc, (pcd_name.txt, annots), Some type_expr)
@@ -257,7 +266,7 @@ and type_expr_of_type_declaration ~extras type_decl =
 and type_expr_of_core_type ~extras loc' core_type =
   let loc = atd_loc_of_parsetree_loc loc' in
   let { ptyp_attributes; ptyp_desc; _ } = core_type in
-  let annots, _field_type = parse_attributes ptyp_attributes in
+  let annots, _field_type = parse_inner_attributes ptyp_attributes in
   match ptyp_desc with
   | Ptyp_var x -> Tvar (loc, x), extras
   | Ptyp_tuple tys ->
@@ -321,7 +330,7 @@ and with_core_tys_extras ~extras ~tys loc' f =
     List.fold_left
       (fun (extras, type_exprs) core_type ->
         let _annots, _field_type =
-          parse_attributes core_type.ptyp_attributes
+          parse_inner_attributes core_type.ptyp_attributes
         in
         let type_expr, extras' =
           type_expr_of_core_type ~extras loc' core_type
