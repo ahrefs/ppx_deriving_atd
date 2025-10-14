@@ -139,7 +139,7 @@ and type_expr_of_type_declaration ~extras type_decl =
 and type_expr_of_core_type ~extras loc' core_type =
   let loc = atd_loc_of_parsetree_loc loc' in
   match core_type.ptyp_desc with
-  | Ptyp_var x -> Tvar (loc, sprintf "'%s" x), extras
+  | Ptyp_var x -> Tvar (loc, x), extras
   | Ptyp_tuple tys ->
       with_core_tys_extras ~extras ~tys loc' @@ fun ~type_exprs ->
       Tuple (loc, type_exprs, [] (* TODO: annotations *))

@@ -6,13 +6,16 @@ let get_type_name name params =
   | _ -> sprintf "(%s) %s" (String.concat ", " params) name
 
 let rec export_module_item_string = function
-  | (Type (_, (name, type_params, annots), type_expr) : Atd.Ast.module_item) ->
-      sprintf "\ntype %s %s = %s\n" (get_type_name name type_params) (export_annot_list annots)
+  | (Type (_, (name, type_params, annots), type_expr) :
+      Atd.Ast.module_item) ->
+      sprintf "\ntype %s %s = %s\n"
+        (get_type_name name type_params)
+        (export_annot_list annots)
         (export_type_expr_string type_expr)
 
 and export_type_expr_string = function
   | Record (_loc, fields, annots) ->
-      sprintf "{\n%s\n} %s"
+      sprintf "{\n%s\n}%s"
         (String.concat "\n" (List.map export_field_string fields))
         (export_annot_list annots)
   | Sum (_loc, variants, annots) ->
@@ -43,14 +46,20 @@ and export_type_expr_string = function
       sprintf "%s wrap %s"
         (export_type_expr_string type_expr)
         (export_annot_list annots)
-  | Tvar (_loc, name) -> name
+  | Tvar (_loc, name) -> sprintf "'%s" name
   | Name (_loc, (_loc2, name, type_exprs), annots) ->
-      sprintf "%s %s %s" name
-        (String.concat "\n" @@ List.map export_type_expr_string type_exprs)
-        (export_annot_list annots)
+      let name =
+        match List.map export_type_expr_string type_exprs with
+        | [] -> name
+        | type_exprs ->
+            sprintf "(%s) %s" (String.concat ", " type_exprs) name
+      in
+      sprintf "%s %s" name (export_annot_list annots)
 
 and export_cell_string (_loc, type_expr, annots) =
-  sprintf "%s %s" (export_type_expr_string type_expr) (export_annot_list annots)
+  sprintf "%s %s"
+    (export_type_expr_string type_expr)
+    (export_annot_list annots)
 
 and export_field_string = function
   | `Inherit (_loc, type_expr) ->
@@ -61,14 +70,16 @@ and export_field_string = function
   | `Field (_, (name, kind, annots), type_expr) ->
       sprintf "\t%s%s %s: %s;"
         (export_field_kind_string kind)
-        name (export_annot_list annots)
+        name
+        (export_annot_list annots)
         (export_type_expr_string type_expr)
 
 and export_variant_string = function
   | Inherit (_loc, type_expr) ->
       sprintf "\t| inherit %s" @@ export_type_expr_string type_expr
   | Variant (_loc, (name, annots), type_expr) ->
-      sprintf "\t| %s %s %s" name (export_annot_list annots)
+      sprintf "\t| %s %s %s" name
+        (export_annot_list annots)
         (match Option.map export_type_expr_string type_expr with
         | None -> ""
         | Some v -> "of " ^ v)
@@ -79,7 +90,10 @@ and export_field_kind_string = function
   | With_default -> "~"
 
 and export_annot_list annots =
-  String.concat " " @@ List.map export_annot_section_list annots
+  match annots with
+  | [] -> ""
+  | _ ->
+      " " ^ String.concat " " @@ List.map export_annot_section_list annots
 
 and export_annot_section_list (name, (_, annot_fields)) =
   sprintf "<%s %s>" name
