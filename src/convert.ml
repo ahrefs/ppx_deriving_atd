@@ -49,17 +49,31 @@ let annot_of_attributes attrs =
   in
   List.filter_map map attrs
 
-let parse_attributes attrs =
+let parse_attributes ?ocaml_allowed_attributes ?json_allowed_attributes
+    ?www_allowed_attributes attrs =
+  let allowed_by_section = function
+    | OCaml -> ocaml_allowed_attributes
+    | Json -> json_allowed_attributes
+    | Www -> www_allowed_attributes
+  in
+  let check_allowed section name =
+    match allowed_by_section section with
+    | None -> true
+    | Some allowed_attributes -> List.mem name allowed_attributes
+  in
   let map { attr_name = { txt; loc }; attr_payload; attr_loc } =
     let atd_loc = atd_loc_of_parsetree_loc attr_loc in
     let with_section section name =
-      Some
-        {
-          section;
-          name = name, loc;
-          loc = atd_loc;
-          payload = attr_payload;
-        }
+      match check_allowed section name with
+      | false -> None
+      | true ->
+          Some
+            {
+              section;
+              name = name, loc;
+              loc = atd_loc;
+              payload = attr_payload;
+            }
     in
     match String.split_on_char '.' txt with
     | "deriving" :: [] -> None
@@ -131,7 +145,11 @@ let rec type_def_of_type_declaration loc type_decl =
     type_expr_of_type_declaration ~extras:[] type_decl
   in
   let type_params = type_param_of_ptype_param ptype_params in
-  let annots, _field_type = parse_attributes ptype_attributes in
+  let annots, _field_type =
+    (* type abc <ocaml attrs="..."> = [ A | B ... ] *)
+    parse_attributes ~ocaml_allowed_attributes:[ "attrs" ]
+      ptype_attributes
+  in
   Type (loc, (name, type_params, annots), type_expr) :: extras
 
 and type_param_of_ptype_param ptype_params =
@@ -186,7 +204,11 @@ and type_expr_of_type_declaration ~extras type_decl =
       Record (loc, List.rev type_exprs, annots), extras'
   | { ptype_kind = Ptype_variant tys; ptype_attributes; _ } as type_decl
     ->
-      let annots, _field_type = parse_attributes ptype_attributes in
+      let bottom_annots, _field_type =
+        (* type abc =  [ A | B ... ] <ocaml repr "classic"> *)
+        parse_attributes ~ocaml_allowed_attributes:[ "repr" ]
+          ~json_allowed_attributes:[ "open_enum" ] ptype_attributes
+      in
       let extras', type_exprs =
         List.fold_left
           (fun (extras, type_exprs) -> function
@@ -220,7 +242,7 @@ and type_expr_of_type_declaration ~extras type_decl =
                   (string_of_type_decl type_decl))
           (extras, []) tys
       in
-      Sum (loc, List.rev type_exprs, annots), extras'
+      Sum (loc, List.rev type_exprs, bottom_annots), extras'
   | _ ->
       unsupported_derivation type_decl.ptype_loc
         (string_of_type_decl type_decl)

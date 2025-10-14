@@ -63,7 +63,7 @@ type ('a) one_constrained  = ('a, int ) poly_t2
 type constrained_again  = (poly ) one_constrained 
 
 
-type with_attrs  = [
+type with_attrs  <ocaml attrs="deriving show {with_path = false}, eq"> = [
 	| Bad_value  <json name="bad_value"> 
 	| Good_value  <json name="good_value"> of ( int   ) 
-] 
+]  <ocaml repr="classic">
