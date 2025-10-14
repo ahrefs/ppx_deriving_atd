@@ -23,4 +23,6 @@ type with_attrs =
   | Good_value of int [@json.name "good_value"]
 [@@deriving atd]
 [@@repr "classic"]
-[@@attrs "deriving show {with_path = false}, eq"]
+[@@attr "deriving show {with_path = false}, eq"]
+
+type str_int [@@from "Test2"] [@@deriving atd]

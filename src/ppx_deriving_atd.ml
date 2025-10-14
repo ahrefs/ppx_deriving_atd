@@ -23,7 +23,7 @@ let print_location { loc_start; loc_end; _ } =
 let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   let type_defs =
-    (List.concat_map (Convert.type_def_of_type_declaration loc)) type_decls
+    (List.concat_map (Convert.type_def_of_type_declaration loc )) type_decls
   in
 
   let atd_strings =

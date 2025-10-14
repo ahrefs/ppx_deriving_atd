@@ -147,7 +147,7 @@ let rec type_def_of_type_declaration loc type_decl =
   let type_params = type_param_of_ptype_param ptype_params in
   let annots, _field_type =
     (* type abc <ocaml attrs="..."> = [ A | B ... ] *)
-    parse_attributes ~ocaml_allowed_attributes:[ "attrs" ]
+    parse_attributes ~ocaml_allowed_attributes:[ "attr"; "from" ]
       ptype_attributes
   in
   Type (loc, (name, type_params, annots), type_expr) :: extras
@@ -172,10 +172,17 @@ and type_expr_of_type_declaration ~extras type_decl =
   | Parsetree.
       {
         ptype_kind = Ptype_abstract;
-        ptype_manifest = Some core_type;
+        ptype_manifest = None;
         ptype_attributes;
         _;
       } ->
+      Name (loc, (loc, "abstract", []), []), extras
+  | {
+   ptype_kind = Ptype_abstract;
+   ptype_manifest = Some core_type;
+   ptype_attributes;
+   _;
+  } ->
       type_expr_of_core_type ~extras loc' core_type
   | { ptype_kind = Ptype_record tys; ptype_attributes; _ } ->
       let annots, _field_type = parse_attributes ptype_attributes in
