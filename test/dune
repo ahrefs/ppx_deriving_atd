@@ -1,6 +1,7 @@
 (executable
  (name export_atd)
  (libraries ppx_deriving_atd)
+ (modules :standard \ gen_single_atd)
  (preprocess (pps ppx_deriving_atd)))
 
 (rule
@@ -20,3 +21,19 @@
 (rule
  (alias gen)
  (action (diff readme.atd readme.atd.out)))
+
+(executable
+ (name gen_single_atd)
+ (libraries ppx_deriving_atd)
+ (modules gen_single_atd)
+ (preprocess (pps ppx_deriving_atd)))
+
+(rule
+ (alias gen)
+ (targets single_record.atd.out)
+ (action
+  (run ./gen_single_atd.exe)))
+
+(rule
+ (alias gen)
+ (action (diff single_record.atd single_record.atd.out)))

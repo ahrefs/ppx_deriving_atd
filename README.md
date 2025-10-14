@@ -6,6 +6,45 @@ This is a PPX deriver that creates [ATD](https://github.com/ahrefs/atd) files.
 ## Usage
 The current setup is not very ergonomic.
 
+### Single ATD in one folder
+Example in [gen_single_atd.ml](./test/gen_single_atd.ml):
+```ocaml
+type single_record = { a : int; x : string } [@@deriving atd]
+
+let () = export_atd_file "single_record.atd.out"
+```
+Notice the `single_record.atd.out` extension.  This is because to get the actual file, we need to add some dune rules to call this new executable and then promote this `single_record.atd.out` from `_build` directory into `single_record.atd` in our current directory.
+
+In dune configure:
+```dune
+(executable
+ (name gen_single_atd)
+ (libraries ppx_deriving_atd)
+ (modules gen_single_atd)
+ (preprocess (pps ppx_deriving_atd)))
+
+(rule
+ (alias gen)
+ (targets single_record.atd.out)
+ (action
+  (run ./gen_single_atd.exe)))
+
+(rule
+ (alias gen)
+ (action (diff single_record.atd single_record.atd.out)))
+```
+
+Now to generate the file, you can run `dune build @gen --auto-promote` and the `single_record.atd` file will be generated:
+
+```atd
+type single_record  = {
+	a : int  ;
+	x : string  ;
+} 
+```
+
+### Multiple ATDs in one folder
+
 In your normal OCaml files, add the deriving annotation:
 ```ocaml
 type my_type = {
