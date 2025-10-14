@@ -1,6 +1,6 @@
 type u = { x : int } [@@deriving atd]
 
-type x = { abc : string option; def : int; ghi : bool [@default "false"] }
+type x = { abc : string option; def : int; ghi : bool [@default "false"] [@json.name "something_else"] }
 [@@deriving atd]
 
 type y = { x : x } [@@deriving atd]
@@ -19,3 +19,8 @@ type constrained = (string, int) poly_t2 [@@deriving atd]
 type 'a one_constrained = ('a, int) poly_t2 [@@deriving atd]
 
 type constrained_again = poly one_constrained [@@deriving atd]
+
+type with_attrs =
+  | Bad_value [@json.name "bad_value"]
+  | Good_value of int [@json.name "good_value"]
+[@@deriving atd]

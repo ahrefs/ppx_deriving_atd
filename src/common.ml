@@ -3,7 +3,8 @@ open Printf
 
 exception Show_me of Parsetree.type_declaration
 
-let atd_loc_of_parsetree_loc { loc_start; loc_end; _ } = (loc_start, loc_end)
+let atd_loc_of_parsetree_loc { loc_start; loc_end; _ } =
+  loc_start, loc_end
 
 let parsetree_loc_of_atd_loc (loc_start, loc_end) =
   { loc_start; loc_end; loc_ghost = false }
@@ -41,11 +42,13 @@ let rec fold_loc_exp_desc loc exp_desc =
   | Parsetree.Pexp_ident e -> Pexp_ident { e with loc }
   | Pexp_let (flag, value_bindings, e) ->
       Pexp_let
-        (flag, fold_loc_value_bindings loc value_bindings, fold_loc_exp loc e)
+        ( flag,
+          fold_loc_value_bindings loc value_bindings,
+          fold_loc_exp loc e )
   | Pexp_apply (e, args) ->
       Pexp_apply
         ( fold_loc_exp loc e,
-          List.map (fun (a, e) -> (a, fold_loc_exp loc e)) args )
+          List.map (fun (a, e) -> a, fold_loc_exp loc e) args )
   | Pexp_fun (arg, e0, p, e1) ->
       Pexp_fun
         ( arg,
@@ -69,7 +72,8 @@ and fold_loc_value_bindings loc =
         pvb_pat = fold_loc_pat loc v.pvb_pat;
       })
 
-and fold_loc_pat loc pat = { pat with ppat_loc = loc; ppat_loc_stack = [ loc ] }
+and fold_loc_pat loc pat =
+  { pat with ppat_loc = loc; ppat_loc_stack = [ loc ] }
 
 and fold_loc_exp loc exp =
   {
@@ -82,7 +86,8 @@ and fold_loc_exp loc exp =
 let fold_loc_structure_item loc x =
   let pstr_desc =
     match x.pstr_desc with
-    | Parsetree.Pstr_eval (e, attrs) -> Pstr_eval (fold_loc_exp loc e, attrs)
+    | Parsetree.Pstr_eval (e, attrs) ->
+        Pstr_eval (fold_loc_exp loc e, attrs)
     | Pstr_value (flag, value_bindings) ->
         Pstr_value (flag, fold_loc_value_bindings loc value_bindings)
     | e -> e
@@ -93,3 +98,33 @@ let atd_filename_from_loc ?(extension = ".atd") loc =
   Filename.chop_extension loc.loc_start.pos_fname ^ extension
 
 let make_ghost_loc loc = { loc with loc_ghost = true }
+
+let compare_lexing_position a b =
+  let Lexing.
+        {
+          pos_fname = a_filename;
+          pos_lnum = a_lnum;
+          pos_bol = a_bol;
+          pos_cnum = a_cnum;
+        } =
+    a
+  in
+  let Lexing.
+        {
+          pos_fname = b_filename;
+          pos_lnum = b_lnum;
+          pos_bol = b_bol;
+          pos_cnum = b_cnum;
+        } =
+    b
+  in
+  match a_filename = b_filename with
+  | false ->
+      failwith (sprintf "unable to compare lexing positions of different files: %s and %s" a_filename b_filename)
+  | true -> (
+      match Int.compare a_lnum b_lnum with
+      | 0 -> (
+          match Int.compare a_bol b_bol with
+          | 0 -> Int.compare a_cnum b_cnum
+          | v -> v)
+      | v -> v)
