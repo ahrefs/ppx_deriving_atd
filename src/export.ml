@@ -1,8 +1,13 @@
 open Printf
 
+let get_type_name name params =
+  match params with
+  | [] -> name
+  | _ -> sprintf "(%s) %s" (String.concat ", " params) name
+
 let rec export_module_item_string = function
-  | (Type (_, (name, _, annots), type_expr) : Atd.Ast.module_item) ->
-      sprintf "\ntype %s %s = %s\n" name (export_annot_list annots)
+  | (Type (_, (name, type_params, annots), type_expr) : Atd.Ast.module_item) ->
+      sprintf "\ntype %s %s = %s\n" (get_type_name name type_params) (export_annot_list annots)
         (export_type_expr_string type_expr)
 
 and export_type_expr_string = function
@@ -83,7 +88,4 @@ and export_annot_section_list (name, (_, annot_fields)) =
 and export_annot_field_list (name, (_, value)) =
   match value with None -> name | Some v -> sprintf {|%s=%S|} name v
 
-let get_type_name (Type (_, (name, _, _), _) : Atd.Ast.module_item) = name
-
-let export_module_body_string =
-  List.map (fun x -> (get_type_name x, export_module_item_string x))
+let export_module_body_string = List.map export_module_item_string

@@ -37,3 +37,12 @@ type t <ocaml from="Test2.T"> = abstract
 type az  = {
 	b : int  ;
 } 
+
+
+type poly  = string  
+
+
+type ('poly) poly_t  = {
+	x : 'poly;
+	y : poly  ;
+} 

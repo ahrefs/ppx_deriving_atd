@@ -1,6 +1,4 @@
 open Ppxlib
-(* open Common *)
-open Printf
 
 (* Some design decisions:
    - ignoring names lookup (in ATD): each deriving is done on a particular type so will not have stubs defined for any non-primitive types. checks on types are done by the OCaml compiler.
@@ -10,8 +8,8 @@ open Printf
    - another way to avoid global transformation is to only allow deriving atd from a module--this will make sure all the type definitions are processed and then exported in one go
 *)
 
-let let_str_generator loc name s =
-  let name = sprintf "__EXPORT_ATD_%s_STRING" name in
+let let_str_generator loc s =
+  let name = "__EXPORT_ATD_STRING" in
   let pvar =  Ast_builder.Default.pvar ~loc name in
   let evar = Ast_builder.Default.evar ~loc name in
   let expr = Ast_builder.Default.estring ~loc s in
@@ -30,11 +28,8 @@ let generate_impl_atd ~ctxt (_rec_flag, type_decls) =
 
   let atd_strings =
     let type_strs = Export.export_module_body_string type_defs in
-    List.map
-      (fun (type_name, type_str) ->
-        (* better way to do this? have to keep output in code :/ *)
-          let_str_generator loc type_name type_str)
-      type_strs
+    (* better way to do this? have to keep output in code :/ *)
+    List.map (let_str_generator loc) type_strs
   in
 
   List.concat [ atd_strings ]
