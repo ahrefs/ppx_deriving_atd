@@ -3,7 +3,7 @@ open Printf
 open Atd.Ast
 open Common
 
-type attribute_section = OCaml | Json | Www
+type attribute_section = OCaml | Json | Www | Other of string
 type atd_loc = position * position
 
 type attribute = {
@@ -42,6 +42,7 @@ let annot_of_attributes attrs =
       | OCaml -> "ocaml"
       | Json -> "json"
       | Www -> "www"
+      | Other s -> s
     in
     match List.filter_map map_filed fields with
     | [] -> None
@@ -57,6 +58,7 @@ let parse_attributes' ?ocaml_allowed_attributes
     | OCaml -> ocaml_allowed_attributes, ocaml_disallowed_attributes
     | Json -> json_allowed_attributes, json_disallowed_attributes
     | Www -> www_allowed_attributes, www_disallowed_attributes
+    | Other _ -> None, None
   in
   let check_allowed section name =
     match by_section section with
@@ -81,9 +83,10 @@ let parse_attributes' ?ocaml_allowed_attributes
     match String.split_on_char '.' txt with
     | "deriving" :: [] -> None
     | x :: [] -> with_section OCaml x
-    | [ "json"; x ] -> with_section Json x
-    | [ "www"; x ] -> with_section Www x
-    | _ ->
+    | "json" :: xs -> with_section Json (String.concat "." xs)
+    | "www" :: xs  -> with_section Www (String.concat "." xs)
+    | other :: xs -> with_section (Other other) (String.concat "." xs)
+    | [] ->
         unsupported_derivation loc
           (sprintf "Unsupported attribute header: %s" txt)
   in
