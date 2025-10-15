@@ -14,4 +14,16 @@ type ('a, 'b) t1_string = ('a, 'b, string) t1 [@@deriving atd]
 (* Then I also want an extra polymorphic field *)
 (* type ('a, 'b) t1_string_string = ('a, 'b, string, string) t1 [@@deriving atd] *)
 
+(* Some drawbacks *)
+(* currently stub types are not type checked by OCaml compiler (but will be caught once ATD compiles) e.g. *)
+type t2 [@@from "SomeNonExistentModule"] [@@deriving atd]
+type t3_wrap = string wrap [@module "SomeNonExistentModule"] [@@deriving atd]
+
+(* Inherits are not supported *)
+(* type a = { a : bool }
+   type b = { inherit a; b : int } :(
+   but maybe:
+   type%inherit b = { b: int }*)
+
+(* Have to call the export function *)
 let () = export_atd_file "presentation.atd.out"

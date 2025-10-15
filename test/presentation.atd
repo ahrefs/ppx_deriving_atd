@@ -26,3 +26,7 @@ type ('a) t1_constrained_again  = ('a, string ) t1_constrained
 
 (* Then I also want an extra polymorphic field *)
 (* type ('a, 'b) t1_string_string = ('a, 'b, string, string) t1 [@@deriving atd] *)
+
+type t2  <ocaml from="SomeNonExistentModule"> = abstract
+
+type t3_wrap  = (string ) wrap  <ocaml module="SomeNonExistentModule">
