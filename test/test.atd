@@ -63,10 +63,16 @@ type ('a) one_constrained  <ocaml attr="deriving show {with_path = false}, eq"> 
 type constrained_again  <ocaml attr="deriving show {with_path = false}, eq"> = (poly ) one_constrained 
 
 
-type with_attrs  <ocaml attr="deriving show {with_path = false}, eq"> = [
+type with_attrs  <ocaml attr="deriving show {with_path = false}, eq" repr="classic"> = [
 	| Bad_value  <json name="bad_value"> 
 	| Good_value  <json name="good_value"> of ( int   ) 
 ]  <ocaml repr="classic">
 
 
 type str_int  <ocaml from="Test2"> = abstract 
+
+
+type str_int_wrap  = (string ) wrap  <ocaml module="Test2">
+
+
+type json  <ocaml t="t" module="Yojson.Safe"> <ocaml_www t="t" module="Module.Atd_types.Www_form.Json"> <ocaml_validate t="t" module="Module.Atd_types.Validate.Json"> = abstract 

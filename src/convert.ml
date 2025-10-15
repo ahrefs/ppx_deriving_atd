@@ -4,6 +4,13 @@ open Atd.Ast
 open Common
 
 type attribute_section = OCaml | Json | Www | Other of string
+
+let string_of_section = function
+  | OCaml -> "ocaml"
+  | Json -> "json"
+  | Www -> "www"
+  | Other s -> s
+
 type atd_loc = position * position
 
 type attribute = {
@@ -15,6 +22,9 @@ type attribute = {
 
 let ignored_printing_attributes = [ "deriving"; "required"; "optional" ]
 let no_arg_internal_attribute = [ "required"; "optional"; "open_enum" ]
+
+(* special syntax sugar annotations used by the deriver *)
+let internal_ocaml_attributes = [ "required"; "optional"; "default" ]
 let extract_single_string = Ast_pattern.(single_expr_payload (estring __))
 
 let extract_default_payload loc p =
@@ -26,7 +36,7 @@ let extract_default_payload loc p =
     p Fun.id
 
 let annot_of_attributes attrs =
-  let map_filed { section = _; name = name, loc; payload; loc = _ } =
+  let map_filed { section; name = name, loc; payload; loc = _ } =
     match List.mem name ignored_printing_attributes with
     | true -> None
     | false ->
@@ -38,12 +48,6 @@ let annot_of_attributes attrs =
         Some (name, (atd_loc_of_parsetree_loc loc, payload))
   in
   let map (section, (fields, loc)) =
-    let string_of_section = function
-      | OCaml -> "ocaml"
-      | Json -> "json"
-      | Www -> "www"
-      | Other s -> s
-    in
     match List.filter_map map_filed fields with
     | [] -> None
     | fields -> Some (string_of_section section, (loc, fields))
@@ -63,8 +67,16 @@ let parse_attributes' ?ocaml_allowed_attributes
   let check_allowed section name =
     match by_section section with
     | None, None -> true
-    | Some allowed_attributes, _ -> List.mem name allowed_attributes
-    | None, Some disallowed_attributes -> not (List.mem name disallowed_attributes)
+    | None, Some disallowed_attributes ->
+        not (List.mem name disallowed_attributes)
+    | Some allowed_attributes, disallowed_attributes -> (
+        match List.mem name allowed_attributes with
+        | true -> true
+        | false -> (
+            match disallowed_attributes with
+            | None -> true
+            | Some disallowed_attributes ->
+                not (List.mem name disallowed_attributes)))
   in
   let map { attr_name = { txt; loc }; attr_payload; attr_loc } =
     let atd_loc = atd_loc_of_parsetree_loc attr_loc in
@@ -82,9 +94,12 @@ let parse_attributes' ?ocaml_allowed_attributes
     in
     match String.split_on_char '.' txt with
     | "deriving" :: [] -> None
-    | x :: [] -> with_section OCaml x
+    | x :: [] when List.mem x internal_ocaml_attributes ->
+        with_section OCaml x
+    | "ocaml" :: xs ->
+        with_section OCaml (String.concat "." xs)
     | "json" :: xs -> with_section Json (String.concat "." xs)
-    | "www" :: xs  -> with_section Www (String.concat "." xs)
+    | "www" :: xs -> with_section Www (String.concat "." xs)
     | other :: xs -> with_section (Other other) (String.concat "." xs)
     | [] ->
         unsupported_derivation loc
@@ -141,7 +156,8 @@ let allowed_in_top_level_attributes = [ "attr"; "from" ]
 (* type abc <ocaml attr="..."> = ... *)
 
 let parse_inner_attributes =
-  parse_attributes' ~ocaml_disallowed_attributes:allowed_in_top_level_attributes
+  parse_attributes'
+    ~ocaml_disallowed_attributes:allowed_in_top_level_attributes
 
 let rec type_def_of_type_declaration loc type_decl =
   let loc = atd_loc_of_parsetree_loc loc in
@@ -206,7 +222,9 @@ and type_expr_of_type_declaration ~extras type_decl =
             let type_expr, extras' =
               type_expr_of_core_type ~extras loc' pld_type
             in
-            let annots, field_type = parse_inner_attributes pld_attributes in
+            let annots, field_type =
+              parse_inner_attributes pld_attributes
+            in
             let field_type =
               match field_type with
               | Some field_type -> field_type

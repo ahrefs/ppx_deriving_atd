@@ -17,18 +17,28 @@ type ('a, 'b) poly_t2 = { x : 'a; y : 'b } [@@deriving atd]
 type constrained = (string, int) poly_t2 [@@deriving atd]
 
 type 'a one_constrained = ('a, int) poly_t2
-[@@deriving atd] [@@attr "deriving show {with_path = false}, eq"]
+[@@deriving atd] [@@ocaml.attr "deriving show {with_path = false}, eq"]
 
 type constrained_again = poly one_constrained
-[@@deriving atd] [@@attr "deriving show {with_path = false}, eq"]
+[@@deriving atd] [@@ocaml.attr "deriving show {with_path = false}, eq"]
 
 type with_attrs =
   | Bad_value [@json.name "bad_value"]
   | Good_value of int [@json.name "good_value"]
 [@@deriving atd]
-[@@repr "classic"]
-[@@attr "deriving show {with_path = false}, eq"]
+[@@ocaml.repr "classic"]
+[@@ocaml.attr "deriving show {with_path = false}, eq"]
 
-type str_int [@@from "Test2"] [@@deriving atd] (* it would be better to link to the module and then the compiler can check for errors before ATD catches *)
+type str_int [@@ocaml.from "Test2"] [@@deriving atd]
 
-type str_int_wrap = string wrap [@module "Test2"] [@@deriving atd]
+(* it would be better to link to the module and then the compiler can check for errors before ATD catches *)
+type str_int_wrap = (string wrap[@ocaml.module "Test2"]) [@@deriving atd]
+
+type json
+[@@ocaml.module "Yojson.Safe"]
+[@@ocaml.t "t"]
+[@@ocaml_validate.module "Module.Atd_types.Validate.Json"]
+[@@ocaml_validate.t "t"]
+[@@ocaml_www.module "Module.Atd_types.Www_form.Json"]
+[@@ocaml_www.t "t"]
+[@@deriving atd]
