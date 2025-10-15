@@ -1,7 +1,7 @@
 (executable
  (name export_atd)
  (libraries ppx_deriving_atd)
- (modules :standard \ gen_single_atd)
+ (modules :standard \ gen_single_atd gen_presentation_atd)
  (preprocess (pps ppx_deriving_atd)))
 
 (rule
@@ -21,6 +21,23 @@
 (rule
  (alias gen)
  (action (diff readme.atd readme.atd.out)))
+
+
+(executable
+ (name gen_presentation_atd)
+ (libraries ppx_deriving_atd)
+ (modules gen_presentation_atd)
+ (preprocess (pps ppx_deriving_atd)))
+
+(rule
+ (alias gen_presentation)
+ (targets presentation.atd.out)
+ (action
+  (run ./gen_presentation_atd.exe)))
+
+(rule
+ (alias gen_presentation)
+ (action (diff presentation.atd presentation.atd.out)))
 
 (executable
  (name gen_single_atd)

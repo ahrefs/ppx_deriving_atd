@@ -1,0 +1,28 @@
+(* Motivation *)
+(* Some cool polymorphic types *)
+type ('a, 'b, 'c(*, 'd *)) t1  = {
+	a : 'a;
+	b : 'b;
+	c : 'c;
+  d : bool;
+}
+
+
+type var1  = [
+	| A
+	| B  of ( (int , string , bool ) t1   )
+]
+
+(* But I don't like this name...? *)
+type ('a, 'b) t1_constrained  = ('a, 'b, int ) t1
+
+(* type ('a, 'b) t1_int  = ('a, 'b, int ) t1 *)
+
+
+type ('a, 'b) t1_string  = ('a, 'b, string ) t1
+
+
+type ('a) t1_constrained_again  = ('a, string ) t1_constrained
+
+(* Then I also want an extra polymorphic field *)
+(* type ('a, 'b) t1_string_string = ('a, 'b, string, string) t1 [@@deriving atd] *)

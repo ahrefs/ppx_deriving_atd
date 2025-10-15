@@ -14,7 +14,7 @@ type attribute = {
 }
 
 let ignored_printing_attributes = [ "deriving"; "required"; "optional" ]
-let no_arg_internal_attribute = [ "required"; "optional" ]
+let no_arg_internal_attribute = [ "required"; "optional"; "open_enum" ]
 let extract_single_string = Ast_pattern.(single_expr_payload (estring __))
 
 let extract_default_payload loc p =
