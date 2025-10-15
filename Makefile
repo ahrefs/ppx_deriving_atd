@@ -20,5 +20,7 @@ test/%.atd: test
 
 test_atd: test/test.atd test/test2.atd test/readme.atd
 
+test_presentation_atd: test/presentation.atd
+
 gen:
 	dune build @gen --auto-promote

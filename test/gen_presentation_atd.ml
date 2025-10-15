@@ -11,6 +11,8 @@ type ('a, 'b) t1_constrained = ('a, 'b, int) t1 [@@deriving atd]
 
 type ('a, 'b) t1_string = ('a, 'b, string) t1 [@@deriving atd]
 
+type ('a) t1_constrained_again  = ('a, string ) t1_constrained [@@deriving atd]
+
 (* Then I also want an extra polymorphic field *)
 (* type ('a, 'b) t1_string_string = ('a, 'b, string, string) t1 [@@deriving atd] *)
 
