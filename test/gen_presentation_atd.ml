@@ -21,9 +21,9 @@ type t3_wrap = string wrap [@module "SomeNonExistentModule"] [@@deriving atd]
 
 (* Inherits are not supported *)
 (* type a = { a : bool }
-   type b = { inherit a; b : int } :(
-   but maybe:
-   type%inherit b = { b: int }*)
+   type b = { inherit a; b : int } :( *)
+
+(* current setup is: OCaml -> ATD -> OCaml again, it would be better to just derive straight to OCaml *)
 
 (* Have to call the export function *)
 let () = export_atd_file "presentation.atd.out"
