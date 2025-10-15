@@ -30,3 +30,5 @@ type with_attrs =
 [@@attr "deriving show {with_path = false}, eq"]
 
 type str_int [@@from "Test2"] [@@deriving atd] (* it would be better to link to the module and then the compiler can check for errors before ATD catches *)
+
+type str_int_wrap = string wrap [@module "Test2"] [@@deriving atd]
